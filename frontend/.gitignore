@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+build/
+.vite/
+
+# environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
+
+# cache
+.cache/
+.eslintcache
+
+# coverage
+coverage/
+
+# temporary files
+tmp/
+temp/
+
+# package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
