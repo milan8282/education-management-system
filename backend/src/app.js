@@ -9,14 +9,15 @@ import enrollmentRoutes from "./routes/enrollmentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import gradeRoutes from "./routes/gradeRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
-import userRoutes from "./routes/userRoutes.js"
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 
-// Global CORS
 app.use(
   cors({
-    origin: true,
+    origin: process.env.CLIENT_URL || true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
