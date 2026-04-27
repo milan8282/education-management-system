@@ -13,11 +13,10 @@ import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 
+// Global CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: true,
     credentials: true,
   })
 );
