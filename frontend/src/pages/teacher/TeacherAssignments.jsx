@@ -462,35 +462,34 @@ const AssignmentModal = ({
             </div>
           </div>
 
-          {form.type === "assignment" && (
-            <div>
-              <Label>Upload Assignment Material</Label>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={(e) =>
-                  onChange({
-                    target: {
-                      name: "file",
-                      value: e.target.files?.[0] || null,
-                    },
-                  })
-                }
-                className="Input"
-              />
+          <div>
+            <Label>Upload Assignment Material</Label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={(e) =>
+                onChange({
+                  target: {
+                    name: "file",
+                    value: e.target.files?.[0] || null,
+                  },
+                })
+              }
+              className="Input"
+            />
 
-              {form.materialFile?.url && (
-                <button
-                  type="button"
-                  onClick={() => openUploadedFile(form.materialFile)}
-                  className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700"
-                >
-                  <ExternalLink size={16} />
-                  View Current Uploaded File
-                </button>
-              )}
-            </div>
-          )}
+            {form.materialFile?.url && (
+              <button
+                type="button"
+                onClick={() => openUploadedFile(form.materialFile)}
+                className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700"
+              >
+                <ExternalLink size={16} />
+                View Current Uploaded File
+              </button>
+            )}
+          </div>
+
 
           <div className="flex justify-end gap-3 border-t border-slate-200 pt-5">
             <button
