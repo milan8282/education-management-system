@@ -10,6 +10,7 @@ import assignmentRoutes from "./routes/assignmentRoutes.js";
 import gradeRoutes from "./routes/gradeRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/assignments", assignmentRoutes);
 app.use("/api/grades", gradeRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

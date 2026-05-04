@@ -15,6 +15,9 @@ import Loader from "../../components/common/Loader";
 import EmptyState from "../../components/common/EmptyState";
 import { assignmentApi } from "../../api/assignmentApi";
 import { courseApi } from "../../api/courseApi";
+import { ExternalLink } from "lucide-react";
+import { uploadApi } from "../../api/uploadApi";
+import { openUploadedFile } from "../../utils/fileViewer";
 
 const initialForm = {
   courseId: "",
@@ -22,6 +25,8 @@ const initialForm = {
   description: "",
   type: "assignment",
   dueDate: "",
+  file: null,
+  materialFile: null,
 };
 
 const TeacherAssignments = () => {
@@ -42,7 +47,7 @@ const TeacherAssignments = () => {
 
   const queryParams = useMemo(() => {
     const params = {};
-    if (filters.courseId) params.courseId = filters.courseId;
+    if (filters.courseId) params.course = filters.courseId;
     if (filters.type) params.type = filters.type;
     return params;
   }, [filters.courseId, filters.type]);
@@ -97,6 +102,8 @@ const TeacherAssignments = () => {
       description: assignment.description || "",
       type: assignment.type || "assignment",
       dueDate: assignment.dueDate ? assignment.dueDate.slice(0, 10) : "",
+      file: null,
+      materialFile: assignment.materialFile || null,
     });
     setModalOpen(true);
   };
@@ -136,17 +143,42 @@ const TeacherAssignments = () => {
       setSaving(true);
 
       if (editingAssignment) {
+
+        let uploadedMaterial = form.materialFile;
+
+        if (form.file) {
+          const uploadRes = await uploadApi.uploadDocument(form.file);
+          uploadedMaterial = uploadRes.data.data;
+        }
+
         const updatePayload = {
           title: form.title,
           description: form.description,
           type: form.type,
           dueDate: form.dueDate,
+          materialFile: uploadedMaterial,
         };
 
         await assignmentApi.updateAssignment(editingAssignment._id, updatePayload);
         toast.success("Assignment updated successfully");
       } else {
-        await assignmentApi.createAssignment(form);
+
+        let uploadedMaterial = form.materialFile;
+
+        if (form.file) {
+          const uploadRes = await uploadApi.uploadDocument(form.file);
+          uploadedMaterial = uploadRes.data.data;
+        }
+
+        await assignmentApi.createAssignment({
+          courseId: form.courseId,
+          title: form.title,
+          description: form.description,
+          type: form.type,
+          dueDate: form.dueDate,
+          materialFile: uploadedMaterial,
+        });
+
         toast.success("Assignment created successfully");
       }
 
@@ -271,11 +303,10 @@ const TeacherAssignments = () => {
                       />
                       <InfoPill
                         icon={CalendarDays}
-                        text={`Due: ${
-                          assignment.dueDate
-                            ? new Date(assignment.dueDate).toLocaleDateString()
-                            : "-"
-                        }`}
+                        text={`Due: ${assignment.dueDate
+                          ? new Date(assignment.dueDate).toLocaleDateString()
+                          : "-"
+                          }`}
                       />
                     </div>
 
@@ -289,6 +320,16 @@ const TeacherAssignments = () => {
                 </div>
 
                 <div className="flex shrink-0 gap-2">
+                  {assignment.materialFile?.url && (
+                    <button
+                      type="button"
+                      onClick={() => openUploadedFile(assignment.materialFile)}
+                      className="rounded-xl border border-indigo-200 p-2.5 text-indigo-600 transition hover:bg-indigo-50"
+                      title="View uploaded file"
+                    >
+                      <ExternalLink size={17} />
+                    </button>
+                  )}
                   <button
                     onClick={() => openEditModal(assignment)}
                     className="rounded-xl border border-slate-200 p-2.5 text-slate-600 transition hover:bg-slate-50 hover:text-indigo-600"
@@ -421,6 +462,36 @@ const AssignmentModal = ({
             </div>
           </div>
 
+          {form.type === "assignment" && (
+            <div>
+              <Label>Upload Assignment Material</Label>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) =>
+                  onChange({
+                    target: {
+                      name: "file",
+                      value: e.target.files?.[0] || null,
+                    },
+                  })
+                }
+                className="Input"
+              />
+
+              {form.materialFile?.url && (
+                <button
+                  type="button"
+                  onClick={() => openUploadedFile(form.materialFile)}
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                >
+                  <ExternalLink size={16} />
+                  View Current Uploaded File
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 border-t border-slate-200 pt-5">
             <button
               type="button"
@@ -439,8 +510,8 @@ const AssignmentModal = ({
               {saving
                 ? "Saving..."
                 : editingAssignment
-                ? "Update Assignment"
-                : "Create Assignment"}
+                  ? "Update Assignment"
+                  : "Create Assignment"}
             </button>
           </div>
         </form>
@@ -462,11 +533,10 @@ const InfoPill = ({ icon: Icon, text }) => (
 
 const TypeBadge = ({ type }) => (
   <span
-    className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${
-      type === "quiz"
-        ? "bg-amber-50 text-amber-700"
-        : "bg-indigo-50 text-indigo-700"
-    }`}
+    className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${type === "quiz"
+      ? "bg-amber-50 text-amber-700"
+      : "bg-indigo-50 text-indigo-700"
+      }`}
   >
     {type}
   </span>

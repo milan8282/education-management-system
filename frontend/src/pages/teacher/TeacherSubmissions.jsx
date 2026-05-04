@@ -13,6 +13,7 @@ import Loader from "../../components/common/Loader";
 import EmptyState from "../../components/common/EmptyState";
 import { assignmentApi } from "../../api/assignmentApi";
 import { gradeApi } from "../../api/gradeApi";
+import { openUploadedFile } from "../../utils/fileViewer";
 
 const initialGradeForm = {
     courseId: "",
@@ -301,21 +302,20 @@ const TeacherSubmissions = () => {
                                             <InfoPill
                                                 icon={CalendarDays}
                                                 text={`Submitted: ${submission.submittedAt
-                                                        ? new Date(submission.submittedAt).toLocaleDateString()
-                                                        : "-"
+                                                    ? new Date(submission.submittedAt).toLocaleDateString()
+                                                    : "-"
                                                     }`}
                                             />
 
-                                            {submission.fileUrl && (
-                                                <a
-                                                    href={submission.fileUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer"
+                                            {submission.file?.url && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openUploadedFile(submission.file)}
                                                     className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
                                                 >
                                                     <ExternalLink size={14} />
-                                                    View File
-                                                </a>
+                                                    View Submitted File
+                                                </button>
                                             )}
                                         </div>
                                     </div>

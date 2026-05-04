@@ -1,5 +1,16 @@
 import mongoose from "mongoose";
 
+const fileSchema = new mongoose.Schema(
+  {
+    url: { type: String, default: "" },
+    publicId: { type: String, default: "" },
+    originalName: { type: String, default: "" },
+    mimeType: { type: String, default: "" },
+    size: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
 const submissionSchema = new mongoose.Schema(
   {
     student: {
@@ -10,10 +21,11 @@ const submissionSchema = new mongoose.Schema(
     answerText: {
       type: String,
       trim: true,
+      default: "",
     },
-    fileUrl: {
-      type: String,
-      trim: true,
+    file: {
+      type: fileSchema,
+      default: null,
     },
     submittedAt: {
       type: Date,
@@ -53,6 +65,10 @@ const assignmentSchema = new mongoose.Schema(
     dueDate: {
       type: Date,
       required: [true, "Due date is required"],
+    },
+    materialFile: {
+      type: fileSchema,
+      default: null,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

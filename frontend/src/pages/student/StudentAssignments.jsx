@@ -14,10 +14,13 @@ import Loader from "../../components/common/Loader";
 import EmptyState from "../../components/common/EmptyState";
 import { assignmentApi } from "../../api/assignmentApi";
 import { useAuth } from "../../context/AuthContext";
+import { uploadApi } from "../../api/uploadApi";
+import { openUploadedFile } from "../../utils/fileViewer";
+
 
 const initialForm = {
     answerText: "",
-    fileUrl: "",
+    file: null,
 };
 
 const StudentAssignments = () => {
@@ -97,7 +100,7 @@ const StudentAssignments = () => {
         setSelectedAssignment(assignment);
         setForm({
             answerText: submission?.answerText || "",
-            fileUrl: submission?.fileUrl || "",
+            file: null,
         });
         setModalOpen(true);
     };
@@ -119,17 +122,24 @@ const StudentAssignments = () => {
     const handleSubmitAssignment = async (e) => {
         e.preventDefault();
 
-        if (!form.answerText.trim() && !form.fileUrl.trim()) {
-            toast.error("Please enter answer text or file URL");
+        if (!form.answerText.trim() && !form.file) {
+            toast.error("Please enter answer text or upload a file");
             return;
         }
 
         try {
             setSaving(true);
 
+            let uploadedFile = null;
+
+            if (form.file) {
+                const uploadRes = await uploadApi.uploadDocument(form.file);
+                uploadedFile = uploadRes.data.data;
+            }
+
             await assignmentApi.submitAssignment(selectedAssignment._id, {
                 answerText: form.answerText,
-                fileUrl: form.fileUrl,
+                file: uploadedFile,
             });
 
             toast.success("Assignment submitted successfully");
@@ -252,16 +262,15 @@ const StudentAssignments = () => {
                                                         }`}
                                                 />
 
-                                                {submission?.fileUrl && (
-                                                    <a
-                                                        href={submission.fileUrl}
-                                                        target="_blank"
-                                                        rel="noreferrer"
+                                                {submission?.file?.url && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openUploadedFile(submission.file)}
                                                         className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
                                                     >
                                                         <ExternalLink size={14} />
                                                         Submitted File
-                                                    </a>
+                                                    </button>
                                                 )}
                                             </div>
 
@@ -282,8 +291,8 @@ const StudentAssignments = () => {
                                         disabled={Boolean(submission)}
                                         onClick={() => openSubmitModal(assignment)}
                                         className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-lg transition disabled:cursor-not-allowed disabled:opacity-70 ${submission
-                                                ? "bg-emerald-600 text-white shadow-emerald-100"
-                                                : "bg-indigo-600 text-white shadow-indigo-100 hover:bg-indigo-700"
+                                            ? "bg-emerald-600 text-white shadow-emerald-100"
+                                            : "bg-indigo-600 text-white shadow-indigo-100 hover:bg-indigo-700"
                                             }`}
                                     >
                                         {submission ? <CheckCircle2 size={18} /> : <Send size={18} />}
@@ -362,16 +371,22 @@ const SubmitModal = ({
                     </div>
 
                     <div>
-                        <Label>File URL</Label>
+                        <Label>Upload Assignment File</Label>
                         <input
-                            name="fileUrl"
-                            value={form.fileUrl}
-                            onChange={onChange}
-                            placeholder="https://example.com/my-submission.pdf"
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) =>
+                                onChange({
+                                    target: {
+                                        name: "file",
+                                        value: e.target.files?.[0] || null,
+                                    },
+                                })
+                            }
                             className="Input"
                         />
                         <p className="mt-2 text-xs text-slate-500">
-                            Upload your file to drive/cloud and paste the public URL here.
+                            Allowed file types: PDF, DOC, DOCX. Max size: 10MB.
                         </p>
                     </div>
 

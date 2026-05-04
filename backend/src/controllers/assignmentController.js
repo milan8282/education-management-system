@@ -21,7 +21,7 @@ const ensureTeacherOwnsCourse = async (courseId, teacherId) => {
 };
 
 export const createAssignment = asyncHandler(async (req, res) => {
-    const { courseId, title, description, type, dueDate } = req.body;
+    const { courseId, title, description, type, dueDate, materialFile } = req.body;
 
     await ensureTeacherOwnsCourse(courseId, req.user._id);
 
@@ -31,6 +31,7 @@ export const createAssignment = asyncHandler(async (req, res) => {
         description,
         type: type || "assignment",
         dueDate,
+        materialFile: materialFile || null,
         createdBy: req.user._id,
     });
 
@@ -124,14 +125,18 @@ export const updateAssignment = asyncHandler(async (req, res) => {
 
     await ensureTeacherOwnsCourse(assignment.course, req.user._id);
 
-    const updatedAssignment = await Assignment.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        {
-            new: true,
-            runValidators: true,
-        }
-    )
+    assignment.title = req.body.title ?? assignment.title;
+    assignment.description = req.body.description ?? assignment.description;
+    assignment.type = req.body.type ?? assignment.type;
+    assignment.dueDate = req.body.dueDate ?? assignment.dueDate;
+
+    if (req.body.materialFile !== undefined) {
+        assignment.materialFile = req.body.materialFile;
+    }
+
+    await assignment.save();
+
+    const updatedAssignment = await Assignment.findById(assignment._id)
         .populate("course", "title description startDate endDate")
         .populate("createdBy", "name email role")
         .populate("submissions.student", "name email role");
@@ -159,56 +164,63 @@ export const deleteAssignment = asyncHandler(async (req, res) => {
 });
 
 export const submitAssignment = asyncHandler(async (req, res) => {
-    const { answerText, fileUrl } = req.body;
+  const { answerText, file } = req.body;
 
-    if (!answerText && !fileUrl) {
-        res.status(400);
-        throw new Error("Either answerText or fileUrl is required");
-    }
+  if (!answerText && !file?.url) {
+    res.status(400);
+    throw new Error("Either answer text or uploaded file is required");
+  }
 
-    const assignment = await Assignment.findById(req.params.id);
+  const assignment = await Assignment.findById(req.params.id);
 
-    if (!assignment) {
-        res.status(404);
-        throw new Error("Assignment not found");
-    }
+  if (!assignment) {
+    res.status(404);
+    throw new Error("Assignment not found");
+  }
 
-    const enrolled = await Enrollment.findOne({
-        course: assignment.course,
-        student: req.user._id,
-        status: "active",
-    });
+  const now = new Date();
 
-    if (!enrolled) {
-        res.status(403);
-        throw new Error("You must be enrolled in this course to submit assignment");
-    }
+  if (new Date(assignment.dueDate) < now) {
+    res.status(400);
+    throw new Error("Submission closed. Assignment due date is passed.");
+  }
 
-    const existingSubmission = assignment.submissions.find(
-        (submission) => submission.student.toString() === req.user._id.toString()
-    );
+  const enrolled = await Enrollment.findOne({
+    course: assignment.course,
+    student: req.user._id,
+    status: "active",
+  });
 
-    if (existingSubmission) {
-        res.status(400);
-        throw new Error("You have already submitted this assignment");
-    }
+  if (!enrolled) {
+    res.status(403);
+    throw new Error("You must be enrolled in this course to submit assignment");
+  }
 
-    assignment.submissions.push({
-        student: req.user._id,
-        answerText,
-        fileUrl,
-    });
+  const existingSubmission = assignment.submissions.find(
+    (submission) => submission.student.toString() === req.user._id.toString()
+  );
 
-    await assignment.save();
+  if (existingSubmission) {
+    res.status(400);
+    throw new Error("You have already submitted this assignment");
+  }
 
-    const updatedAssignment = await Assignment.findById(assignment._id)
-        .populate("course", "title description")
-        .populate("createdBy", "name email role")
-        .populate("submissions.student", "name email role");
+  assignment.submissions.push({
+    student: req.user._id,
+    answerText: answerText || "",
+    file: file || null,
+  });
 
-    return successResponse(
-        res,
-        "Assignment submitted successfully",
-        updatedAssignment
-    );
+  await assignment.save();
+
+  const updatedAssignment = await Assignment.findById(assignment._id)
+    .populate("course", "title description")
+    .populate("createdBy", "name email role")
+    .populate("submissions.student", "name email role");
+
+  return successResponse(
+    res,
+    "Assignment submitted successfully",
+    updatedAssignment
+  );
 });
